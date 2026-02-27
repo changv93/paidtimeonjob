@@ -1,0 +1,984 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Paid Time On</title>
+  <style>
+    :root{
+      --bg:#0b0f17; --card:#121a2a; --muted:#93a4c7; --text:#e9f0ff;
+      --accent:#6ee7ff; --accent2:#a78bfa; --danger:#ff6b6b; --ok:#57f287;
+      --border:rgba(255,255,255,.08);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 20% 10%, rgba(110,231,255,.12), transparent 60%),
+                  radial-gradient(1000px 700px at 80% 20%, rgba(167,139,250,.12), transparent 60%),
+                  var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .wrap{width:min(1100px, 100%)}
+    header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px;}
+    .brand{display:flex; flex-direction:column; gap:2px;}
+    .brand h1{margin:0; font-size:24px; letter-spacing:.2px}
+    .brand p{margin:0; color:var(--muted); font-size:13px}
+    .grid{display:grid; grid-template-columns: 1.35fr .65fr; gap:16px;}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:16px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.35);
+    }
+    .row{display:flex; gap:12px; flex-wrap:wrap}
+    label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+    input, select{
+      width:100%;
+      background: rgba(255,255,255,.03);
+      border:1px solid var(--border);
+      color:var(--text);
+      border-radius:12px;
+      padding:12px 12px;
+      outline:none;
+    }
+    input:focus, select:focus{border-color: rgba(110,231,255,.35)}
+    .field{flex:1; min-width:160px}
+    .field.small{min-width:110px; max-width:160px}
+    .btns{display:flex; gap:10px; flex-wrap:wrap; margin-top:12px}
+    button{
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    button.primary{
+      background: linear-gradient(90deg, rgba(110,231,255,.22), rgba(167,139,250,.22));
+      border-color: rgba(110,231,255,.25);
+    }
+    button.danger{border-color: rgba(255,107,107,.35)}
+    button:disabled{opacity:.5; cursor:not-allowed}
+    .big{display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:12px;}
+    @media (max-width:560px){ .big{grid-template-columns:1fr} }
+    .stat{
+      padding:14px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.18);
+    }
+    .stat .k{font-size:12px; color:var(--muted); margin-bottom:6px}
+    .stat .v{font-size:28px; font-weight:900; letter-spacing:.3px}
+    .sub{color:var(--muted); font-size:12px; margin-top:8px}
+    .toggle{display:flex; align-items:center; gap:10px; margin-top:10px; user-select:none;}
+    .toggle input{width:auto}
+    .bar{margin-top:12px; height:10px; background: rgba(255,255,255,.06); border:1px solid var(--border); border-radius:999px; overflow:hidden;}
+    .bar > div{height:100%; width:0%; background: linear-gradient(90deg, rgba(87,242,135,.9), rgba(110,231,255,.9)); transition: width .15s linear;}
+    .fineprint{font-size:12px; color:var(--muted); line-height:1.45}
+    .pill{
+      display:inline-flex; gap:6px; align-items:center;
+      padding:6px 10px; border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.03);
+      color:var(--muted);
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .pill b{color:var(--text)}
+    .rightTop{display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end}
+    .mono{font-variant-numeric: tabular-nums; font-feature-settings:"tnum" 1;}
+    .tierTitle{margin:12px 0 6px 0; font-size:13px; color:var(--text); font-weight:800}
+    .tierGrid{display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;}
+    @media (max-width:700px){ .tierGrid{grid-template-columns:1fr} }
+    .segTitle{margin:14px 0 8px 0; font-size:14px; font-weight:900;}
+    .divider{height:1px; background: var(--border); margin:14px 0;}
+    .modeRow{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;}
+    .modeRow .field{min-width:220px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <h1>Paid Time On</h1>
+        <p>Watch your pay tick up — timer or clock in/out.</p>
+      </div>
+      <div class="rightTop">
+        <span class="pill">Status: <b id="status">Ready</b></span>
+        <span class="pill">Current Mult: <b id="curMult">1.0×</b></span>
+        <span class="pill">Gross/sec: <b id="ratePerSec">$0.0000</b></span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2 style="margin:0 0 10px 0; font-size:16px;">Setup</h2>
+
+        <div class="modeRow">
+          <div class="field">
+            <label for="mode">Mode</label>
+            <select id="mode">
+              <option value="timer">Timer (countdown)</option>
+              <option value="clock">Clock in / clock out</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="presetSelect">Presets</label>
+            <select id="presetSelect"></select>
+          </div>
+
+          <div class="field">
+            <label for="presetName">Preset name</label>
+            <input id="presetName" placeholder="e.g., Perrigo Night Shift" />
+          </div>
+
+          <div class="field" style="max-width:240px;">
+            <label>&nbsp;</label>
+            <div class="row" style="gap:10px;">
+              <button id="savePresetBtn">Save</button>
+              <button class="danger" id="deletePresetBtn">Delete</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <div class="field">
+            <label for="rate">Base hourly pay ($/hr)</label>
+            <input id="rate" type="number" min="0" step="0.01" value="25.00" />
+          </div>
+          <div class="field">
+            <label for="alreadyWorked">Hours already worked this week (optional)</label>
+            <input id="alreadyWorked" type="number" min="0" step="0.25" placeholder="e.g., 38" />
+          </div>
+          <div class="field">
+            <label for="goal">Earnings goal (optional)</label>
+            <input id="goal" type="number" min="0" step="0.01" placeholder="e.g., 200" />
+          </div>
+        </div>
+
+        <div id="timerInputs">
+          <div class="segTitle">Timer inputs</div>
+          <div class="row">
+            <div class="field small">
+              <label for="hh">Hours</label>
+              <input id="hh" type="number" min="0" step="1" value="8" />
+            </div>
+            <div class="field small">
+              <label for="mm">Minutes</label>
+              <input id="mm" type="number" min="0" max="59" step="1" value="0" />
+            </div>
+            <div class="field small">
+              <label for="ss">Seconds</label>
+              <input id="ss" type="number" min="0" max="59" step="1" value="0" />
+            </div>
+          </div>
+        </div>
+
+        <div id="clockInputs" style="display:none;">
+          <div class="segTitle">Clock in/out</div>
+          <div class="row">
+            <div class="field">
+              <label for="clockIn">Clock in time</label>
+              <input id="clockIn" type="datetime-local" />
+            </div>
+            <div class="field">
+              <label for="clockOut">Clock out time (optional)</label>
+              <input id="clockOut" type="datetime-local" />
+            </div>
+          </div>
+          <p class="fineprint" style="margin:8px 0 0 0;">
+            Tip: Leave Clock Out blank and hit <b>Clock In</b>. When you’re done, hit <b>Clock Out</b> to finish and see the popup.
+          </p>
+        </div>
+
+        <div class="toggle">
+          <input id="tiersEnabled" type="checkbox" checked />
+          <label for="tiersEnabled" style="margin:0;">Enable tiered overtime</label>
+          <span class="pill">1.5× → 2× → 3×</span>
+        </div>
+
+        <div class="tierTitle">Overtime tiers (optional)</div>
+        <div class="tierGrid">
+          <div class="field">
+            <label for="t1After">x1.5 after (hours)</label>
+            <input id="t1After" type="number" min="0" step="0.25" placeholder="e.g., 40" />
+          </div>
+          <div class="field">
+            <label for="t2After">x2 after (hours)</label>
+            <input id="t2After" type="number" min="0" step="0.25" placeholder="e.g., 50" />
+          </div>
+          <div class="field">
+            <label for="t3After">x3 after (hours)</label>
+            <input id="t3After" type="number" min="0" step="0.25" placeholder="e.g., 60" />
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="toggle">
+          <input id="takeHomeEnabled" type="checkbox" />
+          <label for="takeHomeEnabled" style="margin:0;">Estimate take-home pay</label>
+          <span class="pill">Optional</span>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label for="deductPct">Deductions % (taxes/benefits)</label>
+            <input id="deductPct" type="number" min="0" max="100" step="0.1" placeholder="e.g., 22" />
+          </div>
+          <div class="field">
+            <label for="deductFixed">Fixed deductions per day ($)</label>
+            <input id="deductFixed" type="number" min="0" step="0.01" placeholder="e.g., 15.00" />
+          </div>
+        </div>
+
+        <div class="btns" id="timerBtns">
+          <button class="primary" id="startBtn">Start</button>
+          <button id="pauseBtn" disabled>Pause</button>
+          <button id="resumeBtn" disabled>Resume</button>
+          <button class="danger" id="resetBtn">Reset</button>
+        </div>
+
+        <div class="btns" id="clockBtns" style="display:none;">
+          <button class="primary" id="clockInBtn">Clock In</button>
+          <button class="danger" id="clockOutBtn" disabled>Clock Out</button>
+          <button id="clockResetBtn">Reset</button>
+        </div>
+
+        <p class="fineprint" style="margin-top:12px;">
+          Gross = before deductions. Take-home estimate uses: <b>Gross × (1 − %)</b> then minus fixed daily amount.
+        </p>
+      </section>
+
+      <aside class="card">
+        <h2 style="margin:0 0 10px 0; font-size:16px;">Live</h2>
+
+        <div class="big">
+          <div class="stat">
+            <div class="k" id="timeLabel">Time remaining</div>
+            <div class="v mono" id="timeMain">08:00:00</div>
+            <div class="sub" id="timeSub">Counts down to zero</div>
+          </div>
+          <div class="stat">
+            <div class="k">Gross earned</div>
+            <div class="v mono" id="grossEarned">$0.00</div>
+            <div class="sub">Updates ~10×/sec</div>
+          </div>
+        </div>
+
+        <div class="big">
+          <div class="stat">
+            <div class="k">Take-home (est.)</div>
+            <div class="v mono" id="netEarned">$0.00</div>
+            <div class="sub">Optional estimate</div>
+          </div>
+          <div class="stat">
+            <div class="k">Projected total</div>
+            <div class="v mono" id="projected">$0.00</div>
+            <div class="sub">Full timer / current clock-out</div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div class="pill">Goal progress: <b id="goalPct">0%</b></div>
+            <div class="pill">Effective rate: <b id="effRate">$0.00/hr</b></span></div>
+          </div>
+          <div class="bar"><div id="barFill"></div></div>
+        </div>
+
+        <p class="fineprint" style="margin-top:12px;">
+          End of shift shows a popup: <b>“Congratulations! You made ____ today!”</b>
+        </p>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+
+    const els = {
+      mode: $("mode"),
+      presetSelect: $("presetSelect"),
+      presetName: $("presetName"),
+      savePresetBtn: $("savePresetBtn"),
+      deletePresetBtn: $("deletePresetBtn"),
+
+      rate: $("rate"),
+      alreadyWorked: $("alreadyWorked"),
+      goal: $("goal"),
+
+      timerInputs: $("timerInputs"),
+      hh: $("hh"), mm: $("mm"), ss: $("ss"),
+      startBtn: $("startBtn"),
+      pauseBtn: $("pauseBtn"),
+      resumeBtn: $("resumeBtn"),
+      resetBtn: $("resetBtn"),
+      timerBtns: $("timerBtns"),
+
+      clockInputs: $("clockInputs"),
+      clockIn: $("clockIn"),
+      clockOut: $("clockOut"),
+      clockInBtn: $("clockInBtn"),
+      clockOutBtn: $("clockOutBtn"),
+      clockResetBtn: $("clockResetBtn"),
+      clockBtns: $("clockBtns"),
+
+      tiersEnabled: $("tiersEnabled"),
+      t1After: $("t1After"),
+      t2After: $("t2After"),
+      t3After: $("t3After"),
+
+      takeHomeEnabled: $("takeHomeEnabled"),
+      deductPct: $("deductPct"),
+      deductFixed: $("deductFixed"),
+
+      status: $("status"),
+      curMult: $("curMult"),
+      ratePerSec: $("ratePerSec"),
+
+      timeLabel: $("timeLabel"),
+      timeMain: $("timeMain"),
+      timeSub: $("timeSub"),
+      grossEarned: $("grossEarned"),
+      netEarned: $("netEarned"),
+      projected: $("projected"),
+      goalPct: $("goalPct"),
+      barFill: $("barFill"),
+      effRate: $("effRate"),
+    };
+
+    let timer = null;
+    let running = false;
+    let startTs = null;
+    let lastTick = null;
+    let totalPausedMs = 0;
+    let pausedAt = null;
+
+    let totalMs = 0;
+    let clockStartMs = null;
+    let clockEndMs = null;
+    let donePopupShown = false;
+
+    let earnedGross = 0;
+
+    function fmtTime(totalSeconds){
+      totalSeconds = Math.max(0, Math.floor(totalSeconds));
+      const h = Math.floor(totalSeconds / 3600);
+      const m = Math.floor((totalSeconds % 3600) / 60);
+      const s = totalSeconds % 60;
+      const pad = (n)=> String(n).padStart(2,"0");
+      return `${pad(h)}:${pad(m)}:${pad(s)}`;
+    }
+    function fmtMoney(x){
+      return x.toLocaleString(undefined, { style:"currency", currency:"USD" });
+    }
+    function clampInt(v, min, max){
+      v = Number.isFinite(v) ? Math.floor(v) : min;
+      if (v < min) v = min;
+      if (max != null && v > max) v = max;
+      return v;
+    }
+    function setStatus(txt){ els.status.textContent = txt; }
+
+    function buildTiers(tiersEnabled, t1, t2, t3){
+      let tiers = [];
+      if (!tiersEnabled) return tiers;
+      if (Number.isFinite(t1)) tiers.push({ after: t1, mult: 1.5 });
+      if (Number.isFinite(t2)) tiers.push({ after: t2, mult: 2.0 });
+      if (Number.isFinite(t3)) tiers.push({ after: t3, mult: 3.0 });
+      tiers.sort((a,b)=> a.after - b.after);
+      return tiers;
+    }
+
+    function parseCommonInputs(){
+      const rate = Math.max(0, parseFloat(els.rate.value || "0"));
+      const alreadyWorked = Math.max(0, parseFloat(els.alreadyWorked.value || "0"));
+      const goal = Math.max(0, parseFloat(els.goal.value || "0"));
+
+      const tiersEnabled = els.tiersEnabled.checked;
+      const t1 = parseFloat(els.t1After.value);
+      const t2 = parseFloat(els.t2After.value);
+      const t3 = parseFloat(els.t3After.value);
+      const tiers = buildTiers(tiersEnabled, t1, t2, t3);
+
+      const takeHomeEnabled = els.takeHomeEnabled.checked;
+      const deductPct = Math.max(0, Math.min(100, parseFloat(els.deductPct.value || "0")));
+      const deductFixed = Math.max(0, parseFloat(els.deductFixed.value || "0"));
+
+      return { rate, alreadyWorked, goal, tiersEnabled, tiers, takeHomeEnabled, deductPct, deductFixed };
+    }
+
+    function parseTimerSeconds(){
+      const hh = clampInt(parseFloat(els.hh.value), 0, null);
+      const mm = clampInt(parseFloat(els.mm.value), 0, 59);
+      const ss = clampInt(parseFloat(els.ss.value), 0, 59);
+      els.hh.value = hh; els.mm.value = mm; els.ss.value = ss;
+      return hh*3600 + mm*60 + ss;
+    }
+
+    function multiplierForWeeklyHours(inputs, weeklyHours){
+      let mult = 1.0;
+      if (!inputs.tiersEnabled) return mult;
+      for (const t of inputs.tiers){
+        if (weeklyHours > t.after) mult = t.mult;
+      }
+      return mult;
+    }
+
+    function effectiveRate(inputs, elapsedSec){
+      const weeklyHoursNow = inputs.alreadyWorked + (elapsedSec / 3600);
+      const mult = multiplierForWeeklyHours(inputs, weeklyHoursNow);
+      return { rate: inputs.rate * mult, mult };
+    }
+
+    function calcNet(gross, inputs){
+      if (!inputs.takeHomeEnabled) return gross;
+      const pct = inputs.deductPct / 100;
+      const afterPct = gross * (1 - pct);
+      const afterFixed = Math.max(0, afterPct - inputs.deductFixed);
+      return afterFixed;
+    }
+
+    function calcProjectedTimer(inputs, totalSeconds){
+      const plannedHours = totalSeconds / 3600;
+      if (!inputs.tiersEnabled || inputs.tiers.length === 0){
+        return plannedHours * inputs.rate;
+      }
+
+      let remaining = plannedHours;
+      let weekly = inputs.alreadyWorked;
+      let totalPay = 0;
+      const boundaries = inputs.tiers.map(t => t.after).sort((a,b)=>a-b);
+
+      while (remaining > 1e-10){
+        let nextBoundary = null;
+        for (const b of boundaries){
+          if (weekly < b){ nextBoundary = b; break; }
+        }
+        let segHours = remaining;
+        if (nextBoundary != null){
+          segHours = Math.min(remaining, nextBoundary - weekly);
+        }
+        const midWeekly = weekly + segHours/2;
+        const mult = multiplierForWeeklyHours(inputs, midWeekly);
+        totalPay += segHours * inputs.rate * mult;
+
+        weekly += segHours;
+        remaining -= segHours;
+      }
+      return totalPay;
+    }
+
+    function renderLive({inputs, elapsedMs, remainingMs, projectedGross}){
+      const elapsedSec = elapsedMs / 1000;
+
+      const eff = effectiveRate(inputs, elapsedSec);
+      els.effRate.textContent = `${fmtMoney(eff.rate)}/hr`;
+      els.curMult.textContent = `${eff.mult.toFixed(1).replace(/\.0$/,"")}×`;
+      els.ratePerSec.textContent = (eff.rate / 3600).toFixed(4);
+
+      els.grossEarned.textContent = fmtMoney(earnedGross);
+      els.netEarned.textContent = fmtMoney(calcNet(earnedGross, inputs));
+      els.projected.textContent = fmtMoney(projectedGross);
+
+      if (els.mode.value === "timer"){
+        els.timeLabel.textContent = "Time remaining";
+        els.timeMain.textContent = fmtTime(remainingMs/1000);
+        els.timeSub.textContent = "Counts down to zero";
+      } else {
+        els.timeLabel.textContent = "Elapsed time";
+        els.timeMain.textContent = fmtTime(elapsedMs/1000);
+        els.timeSub.textContent = "From your clock-in time";
+      }
+
+      const goal = inputs.goal;
+      let pct = 0;
+      if (goal > 0){
+        pct = Math.max(0, Math.min(1, earnedGross / goal));
+      } else {
+        pct = projectedGross > 0 ? Math.max(0, Math.min(1, earnedGross / projectedGross)) : 0;
+      }
+      els.goalPct.textContent = `${Math.round(pct*100)}%`;
+      els.barFill.style.width = `${pct*100}%`;
+    }
+
+    function stopInterval(){
+      if (timer){ clearInterval(timer); timer = null; }
+    }
+
+    function showCongratsPopup(){
+      alert(`Congratulations! You made ${fmtMoney(earnedGross)} today!`);
+    }
+
+    function setTimerButtons(state){
+      if (state === "ready"){
+        els.startBtn.disabled = false;
+        els.pauseBtn.disabled = true;
+        els.resumeBtn.disabled = true;
+      } else if (state === "running"){
+        els.startBtn.disabled = true;
+        els.pauseBtn.disabled = false;
+        els.resumeBtn.disabled = true;
+      } else if (state === "paused"){
+        els.startBtn.disabled = true;
+        els.pauseBtn.disabled = true;
+        els.resumeBtn.disabled = false;
+      }
+    }
+
+    function timerStart(){
+      const inputs = parseCommonInputs();
+      const seconds = parseTimerSeconds();
+      if (seconds <= 0){
+        alert("Please enter a timer duration greater than 0.");
+        return;
+      }
+
+      donePopupShown = false;
+      earnedGross = 0;
+
+      totalMs = seconds * 1000;
+      startTs = performance.now();
+      lastTick = startTs;
+      totalPausedMs = 0;
+      pausedAt = null;
+
+      running = true;
+      setStatus("Running");
+      setTimerButtons("running");
+
+      stopInterval();
+      timer = setInterval(()=> tick(), 100);
+      renderLive({inputs, elapsedMs:0, remainingMs: totalMs, projectedGross: calcProjectedTimer(inputs, seconds)});
+    }
+
+    function timerPause(){
+      if (!timer) return;
+      pausedAt = performance.now();
+      stopInterval();
+      setStatus("Paused");
+      running = false;
+      setTimerButtons("paused");
+    }
+
+    function timerResume(){
+      if (timer) return;
+      if (pausedAt == null) return;
+
+      totalPausedMs += performance.now() - pausedAt;
+      pausedAt = null;
+      lastTick = performance.now();
+
+      running = true;
+      setStatus("Running");
+      setTimerButtons("running");
+      timer = setInterval(()=> tick(), 100);
+    }
+
+    function timerReset(){
+      stopInterval();
+      running = false;
+      setStatus("Ready");
+      setTimerButtons("ready");
+
+      earnedGross = 0;
+      donePopupShown = false;
+      startTs = null; lastTick = null; totalPausedMs = 0; pausedAt = null;
+      totalMs = 0;
+
+      const inputs = parseCommonInputs();
+      const seconds = parseTimerSeconds();
+      const proj = calcProjectedTimer(inputs, seconds);
+      renderLive({inputs, elapsedMs:0, remainingMs: seconds*1000, projectedGross: proj});
+    }
+
+    function clockSetButtons(state){
+      if (state === "ready"){
+        els.clockInBtn.disabled = false;
+        els.clockOutBtn.disabled = true;
+      } else {
+        els.clockInBtn.disabled = true;
+        els.clockOutBtn.disabled = false;
+      }
+    }
+
+    function clockReset(){
+      stopInterval();
+      running = false;
+      setStatus("Ready");
+      clockSetButtons("ready");
+
+      earnedGross = 0;
+      donePopupShown = false;
+
+      clockStartMs = null;
+      clockEndMs = null;
+
+      els.clockOut.value = "";
+
+      const inputs = parseCommonInputs();
+      renderLive({inputs, elapsedMs:0, remainingMs:0, projectedGross:0});
+    }
+
+    function clockInNow(){
+      const now = new Date();
+      if (!els.clockIn.value){
+        els.clockIn.value = toLocalInputValue(now);
+      }
+      clockStartMs = new Date(els.clockIn.value).getTime();
+      if (!Number.isFinite(clockStartMs)){
+        alert("Clock in time is invalid.");
+        clockStartMs = null;
+        return;
+      }
+
+      donePopupShown = false;
+      earnedGross = 0;
+
+      startTs = performance.now();
+      lastTick = startTs;
+      totalPausedMs = 0; pausedAt = null;
+
+      running = true;
+      setStatus("Running");
+      clockSetButtons("running");
+
+      stopInterval();
+      timer = setInterval(()=> tick(), 100);
+    }
+
+    function clockOutNow(){
+      const now = new Date();
+      if (!els.clockOut.value){
+        els.clockOut.value = toLocalInputValue(now);
+      }
+      clockEndMs = new Date(els.clockOut.value).getTime();
+      if (!Number.isFinite(clockEndMs)){
+        alert("Clock out time is invalid.");
+        clockEndMs = null;
+        return;
+      }
+      if (clockStartMs == null){
+        alert("Clock in first.");
+        return;
+      }
+      if (clockEndMs <= clockStartMs){
+        alert("Clock out must be after clock in.");
+        return;
+      }
+
+      stopInterval();
+      running = false;
+      setStatus("Done");
+      clockSetButtons("ready");
+
+      const inputs = parseCommonInputs();
+      const elapsedSec = (clockEndMs - clockStartMs) / 1000;
+
+      earnedGross = integrateGross(inputs, elapsedSec);
+
+      renderLive({inputs, elapsedMs: elapsedSec*1000, remainingMs:0, projectedGross: earnedGross});
+
+      if (!donePopupShown){
+        donePopupShown = true;
+        showCongratsPopup();
+      }
+    }
+
+    function integrateGross(inputs, totalElapsedSec){
+      const plannedHours = totalElapsedSec / 3600;
+      if (!inputs.tiersEnabled || inputs.tiers.length === 0){
+        return plannedHours * inputs.rate;
+      }
+
+      let remaining = plannedHours;
+      let weekly = inputs.alreadyWorked;
+      let totalPay = 0;
+      const boundaries = inputs.tiers.map(t => t.after).sort((a,b)=>a-b);
+
+      while (remaining > 1e-10){
+        let nextBoundary = null;
+        for (const b of boundaries){
+          if (weekly < b){ nextBoundary = b; break; }
+        }
+        let segHours = remaining;
+        if (nextBoundary != null){
+          segHours = Math.min(remaining, nextBoundary - weekly);
+        }
+        const midWeekly = weekly + segHours/2;
+        const mult = multiplierForWeeklyHours(inputs, midWeekly);
+        totalPay += segHours * inputs.rate * mult;
+
+        weekly += segHours;
+        remaining -= segHours;
+      }
+      return totalPay;
+    }
+
+    function tick(){
+      const inputs = parseCommonInputs();
+      const now = performance.now();
+
+      if (els.mode.value === "timer"){
+        const elapsedMs = Math.max(0, now - startTs - totalPausedMs);
+        const remainingMs = Math.max(0, totalMs - elapsedMs);
+        const dt = (now - lastTick) / 1000;
+
+        const elapsedSecNow = elapsedMs / 1000;
+        const elapsedSecMid = Math.max(0, elapsedSecNow - dt/2);
+
+        const eff = effectiveRate(inputs, elapsedSecMid);
+        earnedGross += Math.max(0, dt) * (eff.rate / 3600);
+
+        lastTick = now;
+
+        const totalSeconds = totalMs / 1000;
+        const projectedGross = calcProjectedTimer(inputs, totalSeconds);
+        renderLive({inputs, elapsedMs, remainingMs, projectedGross});
+
+        if (remainingMs <= 0){
+          stopInterval();
+          running = false;
+          setStatus("Done");
+          setTimerButtons("ready");
+          if (!donePopupShown){
+            donePopupShown = true;
+            showCongratsPopup();
+          }
+        }
+      } else {
+        if (clockStartMs == null){
+          renderLive({inputs, elapsedMs:0, remainingMs:0, projectedGross:0});
+          return;
+        }
+
+        const wallNowMs = Date.now();
+        const elapsedMs = Math.max(0, wallNowMs - clockStartMs);
+        const dt = (now - lastTick) / 1000;
+
+        const elapsedSecNow = elapsedMs / 1000;
+        const elapsedSecMid = Math.max(0, elapsedSecNow - dt/2);
+
+        const eff = effectiveRate(inputs, elapsedSecMid);
+        earnedGross += Math.max(0, dt) * (eff.rate / 3600);
+
+        lastTick = now;
+
+        let projectedGross = earnedGross;
+        if (els.clockOut.value){
+          const endMs = new Date(els.clockOut.value).getTime();
+          if (Number.isFinite(endMs) && endMs > clockStartMs){
+            const plannedSec = (endMs - clockStartMs) / 1000;
+            projectedGross = integrateGross(inputs, plannedSec);
+          }
+        }
+
+        renderLive({inputs, elapsedMs, remainingMs:0, projectedGross});
+      }
+    }
+
+    const LS_KEY = "paid_time_on_presets_v1";
+
+    function getPresets(){
+      try{
+        return JSON.parse(localStorage.getItem(LS_KEY) || "{}");
+      }catch(e){
+        return {};
+      }
+    }
+    function setPresets(obj){
+      localStorage.setItem(LS_KEY, JSON.stringify(obj));
+    }
+    function refreshPresetSelect(){
+      const presets = getPresets();
+      const names = Object.keys(presets).sort((a,b)=>a.localeCompare(b));
+      els.presetSelect.innerHTML = "";
+      const opt0 = document.createElement("option");
+      opt0.value = "";
+      opt0.textContent = "— Select preset —";
+      els.presetSelect.appendChild(opt0);
+      for (const n of names){
+        const opt = document.createElement("option");
+        opt.value = n;
+        opt.textContent = n;
+        els.presetSelect.appendChild(opt);
+      }
+    }
+    function snapshotSettings(){
+      return {
+        mode: els.mode.value,
+        rate: els.rate.value,
+        alreadyWorked: els.alreadyWorked.value,
+        goal: els.goal.value,
+
+        hh: els.hh.value, mm: els.mm.value, ss: els.ss.value,
+        clockIn: els.clockIn.value,
+        clockOut: els.clockOut.value,
+
+        tiersEnabled: els.tiersEnabled.checked,
+        t1After: els.t1After.value,
+        t2After: els.t2After.value,
+        t3After: els.t3After.value,
+
+        takeHomeEnabled: els.takeHomeEnabled.checked,
+        deductPct: els.deductPct.value,
+        deductFixed: els.deductFixed.value,
+      };
+    }
+    function applySettings(s){
+      if (!s) return;
+      els.mode.value = s.mode || "timer";
+      els.rate.value = s.rate ?? els.rate.value;
+      els.alreadyWorked.value = s.alreadyWorked ?? "";
+      els.goal.value = s.goal ?? "";
+
+      els.hh.value = s.hh ?? els.hh.value;
+      els.mm.value = s.mm ?? els.mm.value;
+      els.ss.value = s.ss ?? els.ss.value;
+
+      els.clockIn.value = s.clockIn ?? "";
+      els.clockOut.value = s.clockOut ?? "";
+
+      els.tiersEnabled.checked = !!s.tiersEnabled;
+      els.t1After.value = s.t1After ?? "";
+      els.t2After.value = s.t2After ?? "";
+      els.t3After.value = s.t3After ?? "";
+
+      els.takeHomeEnabled.checked = !!s.takeHomeEnabled;
+      els.deductPct.value = s.deductPct ?? "";
+      els.deductFixed.value = s.deductFixed ?? "";
+
+      updateModeUI();
+      softRender();
+    }
+
+    function updateModeUI(){
+      const m = els.mode.value;
+      const isTimer = (m === "timer");
+      els.timerInputs.style.display = isTimer ? "" : "none";
+      els.timerBtns.style.display = isTimer ? "" : "none";
+      els.clockInputs.style.display = isTimer ? "none" : "";
+      els.clockBtns.style.display = isTimer ? "none" : "";
+
+      stopInterval();
+      running = false;
+      setStatus("Ready");
+      donePopupShown = false;
+      earnedGross = 0;
+      startTs = null; lastTick = null; totalPausedMs = 0; pausedAt = null;
+
+      if (isTimer){
+        setTimerButtons("ready");
+        const inputs = parseCommonInputs();
+        const seconds = parseTimerSeconds();
+        renderLive({inputs, elapsedMs:0, remainingMs: seconds*1000, projectedGross: calcProjectedTimer(inputs, seconds)});
+      } else {
+        clockSetButtons("ready");
+        clockStartMs = null;
+        clockEndMs = null;
+        renderLive({inputs: parseCommonInputs(), elapsedMs:0, remainingMs:0, projectedGross:0});
+      }
+    }
+
+    function softRender(){
+      if (timer) return;
+      const inputs = parseCommonInputs();
+      if (els.mode.value === "timer"){
+        const seconds = parseTimerSeconds();
+        renderLive({inputs, elapsedMs:0, remainingMs: seconds*1000, projectedGross: calcProjectedTimer(inputs, seconds)});
+      } else {
+        renderLive({inputs, elapsedMs:0, remainingMs:0, projectedGross:0});
+      }
+      const eff0 = effectiveRate(inputs, 0);
+      els.curMult.textContent = `${eff0.mult.toFixed(1).replace(/\.0$/,"")}×`;
+      els.ratePerSec.textContent = (eff0.rate / 3600).toFixed(4);
+    }
+
+    function toLocalInputValue(date){
+      const pad = (n)=> String(n).padStart(2,"0");
+      const y = date.getFullYear();
+      const m = pad(date.getMonth()+1);
+      const d = pad(date.getDate());
+      const hh = pad(date.getHours());
+      const mm = pad(date.getMinutes());
+      return `${y}-${m}-${d}T${hh}:${mm}`;
+    }
+
+    els.mode.addEventListener("change", updateModeUI);
+
+    els.startBtn.addEventListener("click", timerStart);
+    els.pauseBtn.addEventListener("click", timerPause);
+    els.resumeBtn.addEventListener("click", timerResume);
+    els.resetBtn.addEventListener("click", timerReset);
+
+    els.clockInBtn.addEventListener("click", clockInNow);
+    els.clockOutBtn.addEventListener("click", clockOutNow);
+    els.clockResetBtn.addEventListener("click", clockReset);
+
+    const watched = [
+      els.rate, els.alreadyWorked, els.goal,
+      els.hh, els.mm, els.ss,
+      els.clockIn, els.clockOut,
+      els.tiersEnabled, els.t1After, els.t2After, els.t3After,
+      els.takeHomeEnabled, els.deductPct, els.deductFixed
+    ];
+    watched.forEach(el=>{
+      el.addEventListener("input", softRender);
+      el.addEventListener("change", softRender);
+    });
+
+    els.savePresetBtn.addEventListener("click", ()=>{
+      const name = (els.presetName.value || "").trim();
+      if (!name){
+        alert("Enter a preset name first.");
+        return;
+      }
+      const presets = getPresets();
+      presets[name] = snapshotSettings();
+      setPresets(presets);
+      refreshPresetSelect();
+      els.presetSelect.value = name;
+      alert(`Saved preset: ${name}`);
+    });
+
+    els.deletePresetBtn.addEventListener("click", ()=>{
+      const sel = els.presetSelect.value;
+      if (!sel){
+        alert("Select a preset to delete.");
+        return;
+      }
+      const presets = getPresets();
+      if (!(sel in presets)) return;
+      delete presets[sel];
+      setPresets(presets);
+      refreshPresetSelect();
+      els.presetSelect.value = "";
+      alert(`Deleted preset: ${sel}`);
+    });
+
+    els.presetSelect.addEventListener("change", ()=>{
+      const sel = els.presetSelect.value;
+      if (!sel) return;
+      const presets = getPresets();
+      applySettings(presets[sel]);
+      els.presetName.value = sel;
+    });
+
+    refreshPresetSelect();
+    els.clockIn.value = toLocalInputValue(new Date());
+    updateModeUI();
+  </script>
+</body>
+</html>
